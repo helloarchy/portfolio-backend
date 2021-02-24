@@ -8,6 +8,7 @@ import * as expressWinston from "express-winston";
 import cors from "cors";
 import { CommonRoutesConfig } from "./common/common.routes.config";
 import { UsersRoutes } from "./users/users.routes.config";
+import { ProjectsRoutes } from "./projects/projects.routes.config";
 import debug from "debug";
 
 /*
@@ -44,6 +45,7 @@ app.use(
 // here we are adding the UserRoutes to our array,
 // after sending the Express.js application object to have the routes added to our app!
 routes.push(new UsersRoutes(app));
+routes.push(new ProjectsRoutes(app));
 
 // here we are configuring the expressWinston error-logging middleware,
 // which doesn't *handle* errors per se, but does *log* them
