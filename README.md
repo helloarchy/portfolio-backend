@@ -1,17 +1,24 @@
-### Node Express template project
+# Dependencies
+* debug is a module that we will use to avoid calling console.log() while developing 
+  our application. This way, we can easily filter debug statements during 
+  troubleshooting. They can also be switched off entirely in production instead 
+  of having to be removed manually. 
+* winston is responsible for logging requests to our API and the responses (and 
+  errors) returned. express-winston integrates directly with Express.js, so that 
+  all standard API-related winston logging code is already done.
+* cors is a piece of Express.js middleware that allows us to enable cross-origin 
+  resource sharing. Without this, our API would only be usable from front ends 
+  being served from the exact same subdomain as our back end.
 
-This project is based on a GitLab [Project Template](https://docs.gitlab.com/ee/gitlab-basics/create-project.html).
-
-Improvements can be proposed in the [original project](https://gitlab.com/gitlab-org/project-templates/express).
-
-### CI/CD with Auto DevOps
-
-This template is compatible with [Auto DevOps](https://docs.gitlab.com/ee/topics/autodevops/).
-
-If Auto DevOps is not already enabled for this project, you can [turn it on](https://docs.gitlab.com/ee/topics/autodevops/#enabling-auto-devops) in the project settings.
-
-### Developing with Gitpod
-
-This template has a fully-automated dev setup for [Gitpod](https://docs.gitlab.com/ee/integration/gitpod.html).
-
-If you open this project in Gitpod, you'll get all Node dependencies pre-installed and Express will open a web preview.
+# Structure
+Modules have their own responsibilities.
+* Route configuration to define the requests our API can handle
+* Services for tasks such as connecting to our database models, doing queries, 
+  or connecting to external services that are required by the specific request
+* Middleware for running specific request validations before the final controller 
+  of a route handles its specifics
+* Models for defining data models matching a given database schema, to facilitate 
+  data storage and retrieval
+* Controllers for separating the route configuration from the code that finally 
+  (after any middleware) processes a route request, calls the above service 
+  functions if necessary, and gives a response to the client
