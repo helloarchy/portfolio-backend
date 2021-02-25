@@ -3,6 +3,7 @@
   our application. This way, we can easily filter debug statements during 
   troubleshooting. They can also be switched off entirely in production instead 
   of having to be removed manually. 
+  * https://github.com/visionmedia/debug#usage
 * winston is responsible for logging requests to our API and the responses (and 
   errors) returned. express-winston integrates directly with Express.js, so that 
   all standard API-related winston logging code is already done.
