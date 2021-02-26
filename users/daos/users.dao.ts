@@ -1,11 +1,10 @@
 import User, { UserDto } from "../dto/users.model";
 import debug from "debug";
 
-const log: debug.IDebugger = debug("app:in-memory-dao");
+const log: debug.IDebugger = debug("app:db-dao");
 
 class UsersDao {
   private static instance: UsersDao;
-  // users: Array<UserDto> = [];
 
   constructor() {
     log("Created new instance of UsersDao");
@@ -21,45 +20,53 @@ class UsersDao {
   /**
    * Add a new user
    * @param user
+   * @returns the new users _id for confirmation
    */
   async addUser(user: UserDto) {
     try {
-      const newUser = await User.create(user);
-      return newUser._id;
+      const { _id } = await User.create(user);
+      return _id;
     } catch (e) {
       debug.log("Failed creating user");
       throw new Error(e);
     }
   }
 
+  /**
+   * Get all users
+   * @returns all users and their details
+   */
   async getUsers() {
     return User.find();
   }
 
+  /**
+   * Get a single user by their _id
+   * @param userId
+   * @returns the users details
+   */
   async getUserById(userId: string) {
     try {
       return (await User.findById(userId)) as UserDto;
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   /**
    * Update a User with all fields provided
    * @param user
+   * @returns the confirmation message
    */
   async putUserById(user: any) {
     try {
-      const updatedUser = (await this.getUserById(user.userId)) as UserDto;
+      const { _id } = (await User.findByIdAndUpdate(user.userId, {
+        email: user.email,
+        password: user.password,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        permissionLevel: user.permissionLevel,
+      })) as UserDto;
 
-      updatedUser.email = user.email;
-      updatedUser.password = user.password;
-      updatedUser.firstName = user.firstName;
-      updatedUser.lastName = user.lastName;
-      updatedUser.permissionLevel = user.permissionLevel;
-
-      await updatedUser.save();
-
-      return `${updatedUser._id} updated via put`;
+      return `${_id} updated via put`;
     } catch (error) {
       throw new Error(error);
     }
@@ -68,10 +75,11 @@ class UsersDao {
   /**
    * Update a User by the values provided
    * @param user
+   * @returns the confirmation message
    */
   async patchUserById(user: any) {
     try {
-      const currentUser = (await this.getUserById(user.userId)) as UserDto;
+      const currentUser = (await User.findById(user.userId)) as UserDto;
 
       const allowedPatchFields = [
         "password",
@@ -80,6 +88,7 @@ class UsersDao {
         "permissionLevel",
       ];
 
+      // Only update allowed fields
       for (let field of allowedPatchFields) {
         if (field in user) {
           // @ts-ignore
@@ -95,10 +104,13 @@ class UsersDao {
     }
   }
 
+  /**
+   * Remove a user by their id
+   * @param userId
+   */
   async removeUserById(userId: string) {
-    const currentUser = (await this.getUserById(userId)) as UserDto;
     try {
-      await currentUser.remove();
+      await User.findByIdAndDelete(userId);
       return `${userId} removed`;
     } catch (e) {
       throw new Error(e);
