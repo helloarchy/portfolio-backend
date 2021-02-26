@@ -1,12 +1,11 @@
-import { UserDto } from "../dto/users.model";
-import { nanoid } from "nanoid";
+import User, { UserDto } from "../dto/users.model";
 import debug from "debug";
 
 const log: debug.IDebugger = debug("app:in-memory-dao");
 
 class UsersDao {
   private static instance: UsersDao;
-  users: Array<UserDto> = [];
+  // users: Array<UserDto> = [];
 
   constructor() {
     log("Created new instance of UsersDao");
@@ -21,66 +20,93 @@ class UsersDao {
 
   /**
    * Add a new user
-   * User id: One new 6 digit an hour, ~4 years needed, in order to have a
-   * 1% probability of a collision - see https://zelark.github.io/nano-id-cc/
    * @param user
    */
   async addUser(user: UserDto) {
-    user.id = nanoid(8);
-    this.users.push(user);
-    return user.id;
+    try {
+      const newUser = await User.create(user);
+      return newUser._id;
+    } catch (e) {
+      debug.log("Failed creating user");
+      throw new Error(e);
+    }
   }
 
   async getUsers() {
-    return this.users;
+    return User.find();
   }
 
   async getUserById(userId: string) {
-    return this.users.find((user: { id: string }) => user.id === userId);
-  }
-
-  async putUserById(user: UserDto) {
-    const objIndex = this.users.findIndex(
-      (obj: { id: string }) => obj.id === user.id
-    );
-    this.users.splice(objIndex, 1, user);
-    return `${user.id} updated via put`;
-  }
-
-  async patchUserById(user: UserDto) {
-    const objIndex = this.users.findIndex(
-      (obj: { id: string }) => obj.id === user.id
-    );
-    let currentUser = this.users[objIndex];
-    const allowedPatchFields = [
-      "password",
-      "firstName",
-      "lastName",
-      "permissionLevel",
-    ];
-    for (let field of allowedPatchFields) {
-      if (field in user) {
-        // @ts-ignore
-        currentUser[field] = user[field];
-      }
+    try {
+      return (await User.findById(userId)) as UserDto;
+    } catch (e) {
     }
-    this.users.splice(objIndex, 1, currentUser);
-    return `${user.id} patched`;
+  }
+
+  /**
+   * Update a User with all fields provided
+   * @param user
+   */
+  async putUserById(user: any) {
+    try {
+      const updatedUser = (await this.getUserById(user.userId)) as UserDto;
+
+      updatedUser.email = user.email;
+      updatedUser.password = user.password;
+      updatedUser.firstName = user.firstName;
+      updatedUser.lastName = user.lastName;
+      updatedUser.permissionLevel = user.permissionLevel;
+
+      await updatedUser.save();
+
+      return `${updatedUser._id} updated via put`;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  /**
+   * Update a User by the values provided
+   * @param user
+   */
+  async patchUserById(user: any) {
+    try {
+      const currentUser = (await this.getUserById(user.userId)) as UserDto;
+
+      const allowedPatchFields = [
+        "password",
+        "firstName",
+        "lastName",
+        "permissionLevel",
+      ];
+
+      for (let field of allowedPatchFields) {
+        if (field in user) {
+          // @ts-ignore
+          currentUser[field] = user[field];
+        }
+      }
+
+      await currentUser.save();
+
+      return `${user._id} patched`;
+    } catch (e) {
+      throw new Error(e);
+    }
   }
 
   async removeUserById(userId: string) {
-    const objIndex = this.users.findIndex(
-      (obj: { id: string }) => obj.id === userId
-    );
-    this.users.splice(objIndex, 1);
-    return `${userId} removed`;
+    const currentUser = (await this.getUserById(userId)) as UserDto;
+    try {
+      await currentUser.remove();
+      return `${userId} removed`;
+    } catch (e) {
+      throw new Error(e);
+    }
   }
 
   async getUserByEmail(email: string) {
-    const objIndex = this.users.findIndex(
-      (obj: { email: string }) => obj.email === email
-    );
-    let currentUser = this.users[objIndex];
+    const currentUser = await User.findOne({ email: email });
     if (currentUser) {
       return currentUser;
     } else {

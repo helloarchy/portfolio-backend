@@ -2,6 +2,7 @@ import express from "express";
 import * as http from "http";
 import * as bodyparser from "body-parser";
 import * as dotenv from "dotenv";
+import mongoose from "mongoose";
 
 import * as winston from "winston";
 import * as expressWinston from "express-winston";
@@ -64,9 +65,29 @@ app.get("/", (req: express.Request, res: express.Response) => {
   res.status(200).send(`Server up and running!`);
 });
 
-server.listen(port, () => {
-  debugLog(`Server running at http://localhost:${port}`);
-  routes.forEach((route: CommonRoutesConfig) => {
-    debugLog(`Routes configured for ${route.getName()}`);
+/*
+ Run Server
+ */
+if (!process.env.MONGODB_URI) {
+  throw Error("No MONGODB_URI in env!");
+}
+
+mongoose
+  .connect(`${process.env.MONGODB_URI}`, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useFindAndModify: false,
+    useCreateIndex: true,
+  })
+  .then(() => {
+    // Run server iff database connected
+    server.listen(port, () => {
+      debugLog(`Server running at http://localhost:${port}`);
+      routes.forEach((route: CommonRoutesConfig) => {
+        debugLog(`Routes configured for ${route.getName()}`);
+      });
+    });
+  })
+  .catch((err) => {
+    debug.log(err);
   });
-});
