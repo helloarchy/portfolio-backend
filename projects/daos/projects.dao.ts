@@ -126,8 +126,8 @@ class ProjectsDao {
     }
   }
 
-  async getProjectByEmail(email: string) {
-    const currentProject = await Project.findOne({ email: email });
+  async getProjectByTitle(title: string) {
+    const currentProject = await Project.findOne({ title: title });
     if (currentProject) {
       return currentProject;
     } else {
